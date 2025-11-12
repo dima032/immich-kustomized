@@ -1,0 +1,17 @@
+resources:
+  - immich-deployment.yaml
+  - immich-lybrary-pv.yaml
+  - immich-lybrary-pvc.yaml
+  - immich-service.yaml
+  - ingress.yaml
+  - ingress-local.yaml
+  - ml-deployment.yaml
+  - ml-service.yaml
+  - namespace.yaml
+  - psql-pv.yaml
+  - psql-service.yaml
+  - psql-statefulset.yaml
+  - service-account.yaml
+  - redis-deployment.yaml
+  - redis-service.yaml
+  - cloudflared-tunnel.yaml

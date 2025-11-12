@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: immich-psql
+  namespace: immich
+spec:
+  serviceName: "immich-psql-service"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-psql
+  template:
+    metadata:
+      labels:
+        app: immich-psql
+    spec:
+      # ensure files are group-writable for the postgres process
+      securityContext:
+        fsGroup: 999
+        runAsUser: 999     # optional: run main container as postgres UID
+        runAsGroup: 999    # optional
+      initContainers:
+        - name: fix-permissions
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              # numeric 999:999 should match the postgres image UID:GID; adjust if needed
+              chown -R 999:999 /var/lib/postgresql || true
+              chmod -R 0700 /var/lib/postgresql || true
+          securityContext:
+            runAsUser: 0
+          volumeMounts:
+            - name: immich-psql-pv
+              mountPath: /var/lib/postgresql
+      containers:
+        - name: immich-psql
+          image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+          ports:
+              - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: immich-secrets
+                  key: postgres_user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: immich-secrets
+                  key: postgres_password
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: immich-secrets
+                  key: postgres_db
+          volumeMounts:
+            - name: immich-psql-pv
+              mountPath: /var/lib/postgresql
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+  volumeClaimTemplates:
+    - metadata:
+        name: immich-psql-pv
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 2Gi

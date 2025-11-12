@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich
+  namespace: immich
+  labels:
+    app: immich-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-app
+  template:
+    metadata:
+      labels:
+        app: immich-app
+    spec:
+      serviceAccountName: immich-sa
+      containers:
+        - name: immich
+          image: ghcr.io/immich-app/immich-server:v2.2.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 2283
+              name: http
+            - containerPort: 3003
+              name: immich-ml
+          env:
+            - name: IMMICH_MEDIA_LOCATION
+              value: /mnt/data/immich
+            - name: MACHINE_LEARNING_URL
+              value: immich-ml-service
+            - name: DB_HOSTNAME
+              value: immich-psql-service
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: immich-secrets
+                  key: postgres_user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: immich-secrets
+                  key: postgres_password
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: immich-secrets
+                  key: postgres_db
+            - name: REDIS_HOSTNAME
+              value: immich-redis-service
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 2283
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /auth/login
+              port: 2283
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests:
+              memory: "2Gi"
+              cpu: "2000m"
+            limits:
+              memory: "4Gi"
+              cpu: "4000m"
+          volumeMounts:
+            - name: immich-lybrary-pv
+              mountPath: /mnt/data/immich
+      volumes:
+        - name: immich-lybrary-pv
+          persistentVolumeClaim:
+            claimName: immich-lybrary-pvc

@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich-ml
+  namespace: immich
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: immich-ml-app
+  template:
+    metadata:
+      labels:
+        app: immich-ml-app
+    spec:
+      serviceAccountName: immich-sa
+      containers:
+        - name: immich-ml
+          image: ghcr.io/immich-app/immich-machine-learning:v2.2.3
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3003
+              name: immich-ml
+          env:
+            - name: TRANSFORMERS_CACHE
+              value: /cache
+            - name: DB_HOSTNAME
+              value: immich-psql-service
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: immich-secrets
+                  key: postgres_user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: immich-secrets
+                  key: postgres_password
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: immich-secrets
+                  key: postgres_db
+            - name: REDIS_HOSTNAME
+              value: immich-redis-service
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: 3003
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /ping
+              port: 3003
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          volumeMounts:
+            - name: ml-cache
+              mountPath: /cache
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "1000m"
+            limits:
+              memory: "1Gi"
+              cpu: "2000m"
+      volumes:
+        - name: ml-cache
+          emptyDir: {}

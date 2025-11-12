@@ -1,0 +1,10 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: immich
+spec:
+  template:
+    spec:
+      containers:
+        - name: immich
+          image: ghcr.io/immich-app/immich-server:v2.2.3
