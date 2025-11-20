@@ -3,7 +3,7 @@ resources:
   - immich-lybrary-pv.yaml
   - immich-lybrary-pvc.yaml
   - immich-service.yaml
-  - ingress.yaml
+  - ingress-cf.yaml
   - ingress-local.yaml
   - ml-deployment.yaml
   - ml-service.yaml
@@ -14,4 +14,3 @@ resources:
   - service-account.yaml
   - redis-deployment.yaml
   - redis-service.yaml
-  - cloudflared-tunnel.yaml
