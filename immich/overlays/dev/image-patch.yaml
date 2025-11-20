@@ -7,4 +7,4 @@ spec:
     spec:
       containers:
         - name: immich
-          image: ghcr.io/immich-app/immich-server:v2.2.3
+          image: ghcr.io/immich-app/immich-server:v2.3.1
